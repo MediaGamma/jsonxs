@@ -1,7 +1,7 @@
 from copy import deepcopy
 import unittest
 
-from jsonxs import (
+from jsonxs.core import (
     jsonxs,
     ACTION_SET,
     ACTION_DEL,
@@ -64,6 +64,7 @@ class TestJsonxsSetAction(unittest.TestCase):
 
     def test_set_value_of_path(self):
         """Set the value for a path expression"""
+
         jsonxs(self.d, 'feed.id', ACTION_SET, 'your_feed')
         self.assertEqual(
             self.d['feed']['id'],
@@ -71,7 +72,7 @@ class TestJsonxsSetAction(unittest.TestCase):
         )
 
     def test_set_replaces_value_of_path(self):
-        """Replace a value in a list"""
+        """Replaces a value of a path"""
 
         jsonxs(self.d, 'feed.tags[-1]', ACTION_SET, 'javascript')
         self.assertEqual(
@@ -79,13 +80,13 @@ class TestJsonxsSetAction(unittest.TestCase):
             ['devel', 'example', 'javascript']
         )
 
-    def test_set_replaces_value_of_path(self):
-        """Create a new key in a dict"""
+    def test_set_creates_missing_dict_path(self):
+        """Create create missing dict path"""
 
-        jsonxs(self.d, 'feed.author', ACTION_SET, 'Ferry Boender')
+        jsonxs(self.d, 'missing.path', ACTION_SET, 'Something New')
         self.assertEqual(
-            self.d['feed']['author'],
-            'Ferry Boender'
+            self.d['missing']['path'],
+            'Something New'
         )
 
 
@@ -147,16 +148,18 @@ class TestJsonxsMkDictAction(unittest.TestCase):
 
     def test_create_a_dict_value(self):
         """Create a dict value"""
+
         jsonxs(self.d, 'feed.details', ACTION_MKDICT)
         self.assertTrue(self.d['feed']['details'] == {})
 
 
-class TestJsonxsMkDictAction(unittest.TestCase):
+class TestJsonxsMkListAction(unittest.TestCase):
 
     def setUp(self):
         self.d = deepcopy(example_d)
 
     def test_create_a_list_value(self):
         """Create a list value"""
+
         jsonxs(self.d, 'feed.users', ACTION_MKLIST)
         self.assertTrue(self.d['feed']['users'] == [])

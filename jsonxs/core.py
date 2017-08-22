@@ -88,7 +88,7 @@ For example:
 """
 
 from __future__ import absolute_import
-from jsonxs.tokenize import tokenize
+from jsonxs.tokenizer import LIST, OBJECT, tokenize
 
 ACTION_GET = 'get'
 ACTION_SET = 'set'
@@ -111,43 +111,39 @@ def jsonxs(data, expr, action=ACTION_GET, value=None, default=None):
 
     # Walk through the list of tokens to reach the correct path in the data
     # structure.
-    try:
-        prev_path = None
-        cur_path = data
-        for token in tokens:
-            prev_path = cur_path
-            if type(cur_path) is not list:
-                if not token in cur_path:
-                    if action in [ACTION_SET, ACTION_MKDICT, ACTION_MKLIST]:
-                        # When setting values or creating dicts/lists, the key can be
-                        # missing from the data struture
-                        continue
-            cur_path = cur_path[token]
-    except Exception:
-        if default is not None:
-            return default
-        else:
-            raise
+    prev_path = None
+    cur_path = data
+    for token in tokens:
+        prev_path = cur_path
+        if (token.type == LIST and isinstance(cur_path, list)) \
+        or (token.type == OBJECT and token.value in cur_path):
+            cur_path = cur_path[token.value]
+        elif token.type == OBJECT:
+            if action == ACTION_GET:
+                return default
+            elif action == ACTION_SET:
+                cur_path[token.value] = {}
+                cur_path = cur_path[token.value]
+            elif action == ACTION_MKDICT:
+                cur_path[token.value] = {}
+            elif action == ACTION_MKLIST:
+                cur_path[token.value] = []
+                cur_path = cur_path[token.value]
 
     # Perform action the user requested.
     if action == ACTION_GET:
         return cur_path
     elif action == ACTION_DEL:
-        del prev_path[token]
+        del prev_path[token.value]
     elif action == ACTION_SET:
-        prev_path[token] = value
+        prev_path[token.value] = value
     elif action == ACTION_APPEND:
-        prev_path[token].append(value)
+        prev_path[token.value].append(value)
     elif action == ACTION_INSERT:
-        prev_path.insert(token, value)
+        prev_path.insert(token.value, value)
     elif action == ACTION_MKDICT:
         prev_path[token] = {}
     elif action == ACTION_MKLIST:
-        prev_path[token] = []
+        prev_path[token.value] = []
     else:
         raise ValueError("Invalid action: {}".format(action))
-
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
